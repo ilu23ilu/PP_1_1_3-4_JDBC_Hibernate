@@ -12,7 +12,9 @@ import org.hibernate.HibernateException;
 
 
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 public class UserDaoHibernateImpl implements UserDao {
 
@@ -24,19 +26,17 @@ public class UserDaoHibernateImpl implements UserDao {
     @Override
     public void createUsersTable() {
         try (Session session = sessionFactory.openSession()) {
-            transaction = session.beginTransaction();
+            session.beginTransaction();
             session.createSQLQuery(
                     "CREATE TABLE IF NOT EXISTS users (id INT NOT NULL AUTO_INCREMENT, name VARCHAR(100), lastName VARCHAR(200), age TINYINT, PRIMARY KEY (id))").executeUpdate();
-            transaction.commit();
         }
     }
 
     @Override
     public void dropUsersTable() {
         try (Session session = sessionFactory.openSession()) {
-            transaction = session.beginTransaction();
+            session.beginTransaction();
             session.createSQLQuery("DROP TABLE IF EXISTS users").executeUpdate();
-            transaction.commit();
         }
     }
 
@@ -66,6 +66,10 @@ public class UserDaoHibernateImpl implements UserDao {
             query.setParameter("id", id);
             query.executeUpdate();
             transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
         }
     }
 
@@ -76,16 +80,15 @@ public class UserDaoHibernateImpl implements UserDao {
             return query.getResultList();
         } catch (HibernateException e) {
             System.out.println("Err");
-            return null;
+            return Collections.emptyList();
         }
     }
 
     @Override
     public void cleanUsersTable() {
         try (Session session = sessionFactory.openSession()) {
-            transaction = session.beginTransaction();
+            session.beginTransaction();
             session.createSQLQuery("TRUNCATE TABLE users").executeUpdate();
-            transaction.commit();
         }
     }
 }
